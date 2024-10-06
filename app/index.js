@@ -13,6 +13,7 @@ import { useCustomFonts } from "../useCustomFonts";
 import { FontAwesome6 } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+import host from "../host";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -39,7 +40,7 @@ export default function signIn() {
 
   const handleSignIn = async () => {
     let response = await fetch(
-      "https://404d-112-134-196-27.ngrok-free.app/MyChatBackend/SignIn",
+      host+"/MyChatBackend/SignIn",
       {
         method: "POST",
         body: JSON.stringify({
@@ -85,7 +86,7 @@ export default function signIn() {
         value={mobile}
         onChangeText={setMobile}
         keyboardType="phone-pad"
-        placeholderTextColor={"white"}
+        placeholderTextColor="#888"
       />
       <View style={styles.input2}>
         <TextInput
@@ -93,7 +94,7 @@ export default function signIn() {
           placeholder="Password"
           value={password}
           onChangeText={setPassword}
-          placeholderTextColor={"white"}
+          placeholderTextColor="#888"
           secureTextEntry={!isVisible}
         />
         <TouchableOpacity style={styles.eye} onPress={handleVisibility}>

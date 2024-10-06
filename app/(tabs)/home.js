@@ -22,7 +22,6 @@ export default function home() {
       );
       if (response.ok) {
         let json = await response.json();
-        console.log(json);
 
         setChatContacts(json.json_chat_array);
       }
@@ -38,7 +37,7 @@ export default function home() {
         estimatedItemSize={200}
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.contactContainer} onPress={() => {
-            router.push("/chat")
+            router.push({pathname: '/chat', params: item})
           }}>
             <View
               style={

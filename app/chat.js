@@ -1,51 +1,140 @@
 import { FontAwesome6 } from "@expo/vector-icons";
 import { FlashList } from "@shopify/flash-list";
 import { Image } from "expo-image";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  Alert,
+  Modal
 } from "react-native";
+import host from "../host";
+import { useLocalSearchParams } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const chat = () => {
+  const userItem = useLocalSearchParams();
+
   const [message, setMessage] = useState("");
-  const [chatMessages, setChatMessages] = useState([
-    { id: "1", text: "Hey, how are you?", sender: "other" },
-    { id: "2", text: "I'm fine, thanks! How about you?", sender: "me" },
-  ]);
+  const [chatMessages, setChatMessages] = useState([]);
+
+  useEffect(() => {
+    async function fetchMessages() {
+      let currentUserJson = await AsyncStorage.getItem("user");
+      let currentUser = JSON.parse(currentUserJson);
+
+      let response = await fetch(
+        host +
+          "/MyChatBackend/LoadChat?user_id=" +
+          currentUser.id +
+          "&other_user_id=" +
+          userItem.other_user_id
+      );
+      if (response.ok) {
+        let chatArray = await response.json();
+        setChatMessages(chatArray);
+      }
+    }
+    fetchMessages();
+    setInterval(() => {
+      fetchMessages();
+    }, 5000);
+  }, []);
 
   return (
     <View style={styles.container}>
       {/* Top Bar with Avatar, Name, and Status */}
       <View style={styles.topBar}>
-        <Image source={""} style={styles.avatar} />
+        {userItem.avatar_image_found == "true" ? (
+          <Image
+            source={
+              host +
+              "/MyChatBackend/avatarImages/" +
+              userItem.other_user_mobile +
+              ".png"
+            }
+            style={styles.avatar}
+          />
+        ) : (
+          <View style={styles.avatarView}>
+            <Text style={styles.userText}>
+              {userItem.other_user_avatar_letters}
+            </Text>
+          </View>
+        )}
         <View style={styles.userInfo}>
-          <Text style={styles.userName}>John Doe</Text>
-          <Text style={styles.userStatus}>Online</Text>
+          <Text style={styles.userName}>{userItem.other_user_name}</Text>
+          <Text style={styles.userStatus}>
+            {userItem.other_user_status == 1 ? "Online" : "Offline"}
+          </Text>
         </View>
       </View>
 
       <View style={styles.chatBody}>
         {/* Sender's Message */}
-        <View style={styles.senderContainer}>
-          <Text style={styles.senderName}>John Doe</Text>
-          <View style={styles.senderMessageBox}>
-            <Text style={styles.messageText}>Hello, how are you?</Text>
-          </View>
-          <Text style={styles.messageTime}>09:30 AM</Text>
-        </View>
-
-        {/* Receiver's Message */}
-        <View style={styles.receiverContainer}>
-          <Text style={styles.receiverName}>Jane Smith</Text>
-          <View style={styles.receiverMessageBox}>
-            <Text style={styles.messageText}>I'm doing well, thanks!</Text>
-          </View>
-          <Text style={styles.messageTime}>09:31 AM</Text>
-        </View>
+        <FlashList
+          data={chatMessages}
+          renderItem={({ item }) => (
+            <View
+              style={
+                item.side == "right"
+                  ? styles.senderContainer
+                  : styles.receiverContainer
+              }
+            >
+              <TouchableOpacity
+                onLongPress={() => {
+                  Alert.alert("Delete Message", "Select a option", [
+                    {
+                      text: "Delete for everyone",
+                      onPress: async () => {
+                        console.log(item.messageId);
+                        
+                        let response = await fetch(host+"/MyChatBackend/DeleteMessage?msgid="+item.messageId);
+                        if(response.ok) {
+                          let json = await response.json();
+                          if(json.success) {
+                            console.log("deleted")
+                          }
+                        }
+                      },
+                    },
+                    {
+                      text: "Delete for me",
+                      onPress: () => console.log("Delete for me"),
+                    },
+                    {
+                      text: "Cancel",
+                      onPress: () => console.log("Cancel"),
+                    },
+                  ]);
+                }}
+                delayLongPress={500}
+                style={
+                  item.side == "right"
+                    ? styles.senderMessageBox
+                    : styles.receiverMessageBox
+                }
+              >
+                <Text style={styles.messageText}>{item.message}</Text>
+              </TouchableOpacity>
+              <View style={styles.seenContainer}>
+                <Text style={styles.messageTime}>{item.date_time}</Text>
+                {item.side == "right" ? (
+                  <FontAwesome6
+                    name={item.status == 1 ? "check-double" : "check"}
+                    size={12}
+                    color={item.status == 1 ? "#34B7F1" : "#333"}
+                  />
+                ) : null}
+              </View>
+            </View>
+          )}
+          estimatedItemSize={200}
+        />
       </View>
       <View style={styles.inputContainer}>
         <TextInput
@@ -55,7 +144,36 @@ const chat = () => {
           placeholder="Type your message"
           placeholderTextColor="#888"
         />
-        <TouchableOpacity style={styles.sendButton}>
+        <TouchableOpacity
+          style={styles.sendButton}
+          onPress={async () => {
+            if (message.length != 0) {
+              let currentUserJson = await AsyncStorage.getItem("user");
+              let currentUser = JSON.parse(currentUserJson);
+
+              console.log("current user" + currentUser.id);
+              console.log("other user" + userItem.other_user_id);
+
+              let response = await fetch(
+                host +
+                  "/MyChatBackend/SendChat?user_id=" +
+                  currentUser.id +
+                  "&other_user_id=" +
+                  userItem.other_user_id +
+                  "&message=" +
+                  message
+              );
+
+              if (response.ok) {
+                let json = await response.json();
+                if (json.success) {
+                  console.log("sent");
+                  setMessage("");
+                }
+              }
+            }
+          }}
+        >
           <FontAwesome6 name="paper-plane" size={20} color="white" />
         </TouchableOpacity>
       </View>
@@ -97,18 +215,12 @@ const styles = StyleSheet.create({
   chatBody: {
     flex: 1,
     paddingHorizontal: 10,
-    paddingTop: 10,
+    paddingTop: 5,
   },
   senderContainer: {
     alignSelf: "flex-end",
-    marginBottom: 15,
+    marginBottom: 4,
     maxWidth: "75%",
-  },
-  senderName: {
-    color: "#007AFF", // Customize with any color you like
-    fontWeight: "bold",
-    marginBottom: 3,
-    textAlign: "right",
   },
   senderMessageBox: {
     backgroundColor: "#007AFF",
@@ -118,13 +230,8 @@ const styles = StyleSheet.create({
   },
   receiverContainer: {
     alignSelf: "flex-start",
-    marginBottom: 15,
+    marginBottom: 4,
     maxWidth: "75%",
-  },
-  receiverName: {
-    color: "#FF5733", // Customize with any color you like
-    fontWeight: "bold",
-    marginBottom: 3,
   },
   receiverMessageBox: {
     backgroundColor: "#292726",
@@ -162,6 +269,24 @@ const styles = StyleSheet.create({
     backgroundColor: "#007AFF",
     padding: 10,
     borderRadius: 20,
+  },
+  seenContainer: {
+    flexDirection: "row",
+    columnGap: 5,
+    alignItems: "center",
+  },
+  avatarView: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#e1e1e1",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  userText: {
+    fontSize: 25,
+    fontWeight: "bold",
+    color: "#333",
   },
 });
 

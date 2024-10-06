@@ -14,6 +14,7 @@ import { Image } from "expo-image";
 import { useCustomFonts } from "../useCustomFonts";
 import { FontAwesome6 } from "@expo/vector-icons";
 import { router } from "expo-router";
+import host from "../host";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -58,7 +59,7 @@ export default function signUp() {
     }
 
     let response = await fetch(
-      "https://deff-112-134-193-42.ngrok-free.app/MyChatBackend/SignUp",
+      host+"/MyChatBackend/SignUp",
       {
         method: "POST",
         body: form,
@@ -107,21 +108,21 @@ export default function signUp() {
         value={mobile}
         onChangeText={setMobile}
         keyboardType="phone-pad"
-        placeholderTextColor={"white"}
+        placeholderTextColor={"#888"}
       />
       <TextInput
         style={styles.input}
         placeholder="First Name"
         value={firstName}
         onChangeText={setFirstName}
-        placeholderTextColor={"white"}
+        placeholderTextColor={"#888"}
       />
       <TextInput
         style={styles.input}
         placeholder="Last Name"
         value={lastName}
         onChangeText={setLastName}
-        placeholderTextColor={"white"}
+        placeholderTextColor={"#888"}
       />
       <View style={styles.input2}>
         <TextInput
@@ -129,7 +130,7 @@ export default function signUp() {
           placeholder="Password"
           value={password}
           onChangeText={setPassword}
-          placeholderTextColor={"white"}
+          placeholderTextColor={"#888"}
           secureTextEntry={!isVisible}
         />
         <TouchableOpacity style={styles.eye} onPress={handleVisibility}>

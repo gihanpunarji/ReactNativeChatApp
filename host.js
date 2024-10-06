@@ -1,1 +1,1 @@
-export default host = "https://df7a-112-134-196-27.ngrok-free.app";
+export default host = "https://4b34-112-134-196-27.ngrok-free.app";
