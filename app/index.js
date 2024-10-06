@@ -21,31 +21,43 @@ export default function signIn() {
   const [password, setPassword] = useState("");
   const [isVisible, setIsVisible] = useState(false);
 
+  useEffect(() => {
+    async function checkUser() {
+      try {
+        const user = await AsyncStorage.getItem("user");
+        if (user != null) {
+          router.replace("/home");
+        }
+      } catch (e) {}
+    }
+    checkUser();
+  }, []);
+
   const handleVisibility = () => {
     setIsVisible(!isVisible);
   };
 
   const handleSignIn = async () => {
-
     let response = await fetch(
       "https://404d-112-134-196-27.ngrok-free.app/MyChatBackend/SignIn",
       {
         method: "POST",
         body: JSON.stringify({
           mobile: mobile,
-          password: password
+          password: password,
         }),
         headers: {
-          "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+        },
       }
     );
 
     if (response.ok) {
       let json = await response.json();
       if (json.success) {
+        console.log(json.user);
         await AsyncStorage.setItem("user", JSON.stringify(json.user));
-        router.replace("/home")
+        router.replace("/home");
       } else {
         Alert.alert("Error...", json.message);
       }
@@ -66,7 +78,7 @@ export default function signIn() {
   return (
     <LinearGradient colors={["#F2D7CF", "#F2BEAC"]} style={styles.container}>
       <Text style={styles.title}>My Chat</Text>
-      
+
       <TextInput
         style={styles.input}
         placeholder="Mobile"
@@ -96,9 +108,12 @@ export default function signIn() {
       <TouchableOpacity style={styles.button} onPress={handleSignIn}>
         <Text style={styles.buttonText}>Sign In</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.button2} onPress={()=> {
-        router.replace("/signUp")
-      }}>
+      <TouchableOpacity
+        style={styles.button2}
+        onPress={() => {
+          router.replace("/signUp");
+        }}
+      >
         <Text>New User? Regester Here</Text>
       </TouchableOpacity>
     </LinearGradient>
@@ -180,4 +195,3 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
 });
-
