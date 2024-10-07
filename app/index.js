@@ -13,7 +13,6 @@ import { useCustomFonts } from "../useCustomFonts";
 import { FontAwesome6 } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
-import host from "../host";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -40,7 +39,7 @@ export default function signIn() {
 
   const handleSignIn = async () => {
     let response = await fetch(
-      host+"/MyChatBackend/SignIn",
+      process.env.EXPO_PUBLIC_HOST_URL+"/MyChatBackend/SignIn",
       {
         method: "POST",
         body: JSON.stringify({

@@ -5,7 +5,6 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import host from "../../host";
 
 export default function home() {
   const [chatContacts, setChatContacts] = useState([]);
@@ -17,7 +16,7 @@ export default function home() {
       let user = JSON.parse(userJson);
 
       let response = await fetch(
-        host+"/MyChatBackend/LoadHomeData?id=" +
+        process.env.EXPO_PUBLIC_HOST_URL+"/MyChatBackend/LoadHomeData?id=" +
           user.id
       );
       if (response.ok) {
@@ -47,7 +46,7 @@ export default function home() {
               {item.avatar_image_found ? (
                 <Image
                   source={
-                    host+"/MyChatBackend/avatarImages/" +
+                    process.env.EXPO_PUBLIC_HOST_URL+"/MyChatBackend/avatarImages/" +
                     item.other_user_mobile +
                     ".png"
                   }

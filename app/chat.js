@@ -2,6 +2,7 @@ import { FontAwesome6 } from "@expo/vector-icons";
 import { FlashList } from "@shopify/flash-list";
 import { Image } from "expo-image";
 import React, { useEffect, useState } from "react";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import {
   View,
   Text,
@@ -9,9 +10,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  Modal
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
-import host from "../host";
 import { useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -27,7 +28,7 @@ const chat = () => {
       let currentUser = JSON.parse(currentUserJson);
 
       let response = await fetch(
-        host +
+        process.env.EXPO_PUBLIC_HOST_URL +
           "/MyChatBackend/LoadChat?user_id=" +
           currentUser.id +
           "&other_user_id=" +
@@ -46,137 +47,139 @@ const chat = () => {
 
   return (
     <View style={styles.container}>
-      {/* Top Bar with Avatar, Name, and Status */}
-      <View style={styles.topBar}>
-        {userItem.avatar_image_found == "true" ? (
-          <Image
-            source={
-              host +
-              "/MyChatBackend/avatarImages/" +
-              userItem.other_user_mobile +
-              ".png"
-            }
-            style={styles.avatar}
-          />
-        ) : (
-          <View style={styles.avatarView}>
-            <Text style={styles.userText}>
-              {userItem.other_user_avatar_letters}
-            </Text>
-          </View>
-        )}
-        <View style={styles.userInfo}>
-          <Text style={styles.userName}>{userItem.other_user_name}</Text>
-          <Text style={styles.userStatus}>
-            {userItem.other_user_status == 1 ? "Online" : "Offline"}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.chatBody}>
-        {/* Sender's Message */}
-        <FlashList
-          data={chatMessages}
-          renderItem={({ item }) => (
-            <View
-              style={
-                item.side == "right"
-                  ? styles.senderContainer
-                  : styles.receiverContainer
+        {/* Top Bar with Avatar, Name, and Status */}
+        <View style={styles.topBar}>
+          {userItem.avatar_image_found == "true" ? (
+            <Image
+              source={
+                process.env.EXPO_PUBLIC_HOST_URL +
+                "/MyChatBackend/avatarImages/" +
+                userItem.other_user_mobile +
+                ".png"
               }
-            >
-              <TouchableOpacity
-                onLongPress={() => {
-                  Alert.alert("Delete Message", "Select a option", [
-                    {
-                      text: "Delete for everyone",
-                      onPress: async () => {
-                        console.log(item.messageId);
-                        
-                        let response = await fetch(host+"/MyChatBackend/DeleteMessage?msgid="+item.messageId);
-                        if(response.ok) {
-                          let json = await response.json();
-                          if(json.success) {
-                            console.log("deleted")
-                          }
-                        }
-                      },
-                    },
-                    {
-                      text: "Delete for me",
-                      onPress: () => console.log("Delete for me"),
-                    },
-                    {
-                      text: "Cancel",
-                      onPress: () => console.log("Cancel"),
-                    },
-                  ]);
-                }}
-                delayLongPress={500}
-                style={
-                  item.side == "right"
-                    ? styles.senderMessageBox
-                    : styles.receiverMessageBox
-                }
-              >
-                <Text style={styles.messageText}>{item.message}</Text>
-              </TouchableOpacity>
-              <View style={styles.seenContainer}>
-                <Text style={styles.messageTime}>{item.date_time}</Text>
-                {item.side == "right" ? (
-                  <FontAwesome6
-                    name={item.status == 1 ? "check-double" : "check"}
-                    size={12}
-                    color={item.status == 1 ? "#34B7F1" : "#333"}
-                  />
-                ) : null}
-              </View>
+              style={styles.avatar}
+            />
+          ) : (
+            <View style={styles.avatarView}>
+              <Text style={styles.userText}>
+                {userItem.other_user_avatar_letters}
+              </Text>
             </View>
           )}
-          estimatedItemSize={200}
-        />
-      </View>
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          value={message}
-          onChangeText={setMessage}
-          placeholder="Type your message"
-          placeholderTextColor="#888"
-        />
-        <TouchableOpacity
-          style={styles.sendButton}
-          onPress={async () => {
-            if (message.length != 0) {
-              let currentUserJson = await AsyncStorage.getItem("user");
-              let currentUser = JSON.parse(currentUserJson);
+          <View style={styles.userInfo}>
+            <Text style={styles.userName}>{userItem.other_user_name}</Text>
+            <Text style={styles.userStatus}>
+              {userItem.other_user_status == 1 ? "Online" : "Offline"}
+            </Text>
+          </View>
+        </View>
 
-              console.log("current user" + currentUser.id);
-              console.log("other user" + userItem.other_user_id);
+        <View style={styles.chatBody}>
+          {/* Sender's Message */}
+          <FlashList
+            data={chatMessages}
+            renderItem={({ item }) => (
+              <View
+                style={
+                  item.side == "right"
+                    ? styles.senderContainer
+                    : styles.receiverContainer
+                }
+              >
+                <TouchableOpacity
+                  onLongPress={() => {
+                    {
+                      item.side == "right"
+                        ? Alert.alert("Delete Message", "Select a option", [
+                            {
+                              text: "Delete message",
+                              onPress: async () => {
+                                let response = await fetch(
+                                  process.env.EXPO_PUBLIC_HOST_URL +
+                                    "/MyChatBackend/DeleteMessage?msgid=" +
+                                    item.messageId
+                                );
+                                if (response.ok) {
+                                  let json = await response.json();
+                                  if (json.success) {
+                                    console.log("deleted");
+                                  }
+                                }
+                              },
+                            },
+                            {
+                              text: "Cancel",
+                              onPress: () => console.log("Cancel"),
+                            },
+                          ])
+                        : null;
+                    }
+                  }}
+                  delayLongPress={500}
+                  style={
+                    item.side == "right"
+                      ? styles.senderMessageBox
+                      : styles.receiverMessageBox
+                  }
+                >
+                  <Text style={styles.messageText}>{item.message}</Text>
+                </TouchableOpacity>
+                <View style={styles.seenContainer}>
+                  <Text style={styles.messageTime}>{item.date_time}</Text>
+                  {item.side == "right" ? (
+                    <FontAwesome6
+                      name={item.status == 1 ? "check-double" : "check"}
+                      size={12}
+                      color={item.status == 1 ? "#34B7F1" : "#333"}
+                    />
+                  ) : null}
+                </View>
+              </View>
+            )}
+            estimatedItemSize={200}
+          />
+        </View>
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            value={message}
+            onChangeText={setMessage}
+            placeholder="Type your message"
+            placeholderTextColor="#888"
+          />
+          <TouchableOpacity
+            style={styles.sendButton}
+            onPress={async () => {
+              if (message.length != 0) {
+                let currentUserJson = await AsyncStorage.getItem("user");
+                let currentUser = JSON.parse(currentUserJson);
 
-              let response = await fetch(
-                host +
-                  "/MyChatBackend/SendChat?user_id=" +
-                  currentUser.id +
-                  "&other_user_id=" +
-                  userItem.other_user_id +
-                  "&message=" +
-                  message
-              );
+                console.log("current user" + currentUser.id);
+                console.log("other user" + userItem.other_user_id);
 
-              if (response.ok) {
-                let json = await response.json();
-                if (json.success) {
-                  console.log("sent");
-                  setMessage("");
+                let response = await fetch(
+                  process.env.EXPO_PUBLIC_HOST_URL +
+                    "/MyChatBackend/SendChat?user_id=" +
+                    currentUser.id +
+                    "&other_user_id=" +
+                    userItem.other_user_id +
+                    "&message=" +
+                    message
+                );
+
+                if (response.ok) {
+                  let json = await response.json();
+                  if (json.success) {
+                    console.log("sent");
+                    setMessage("");
+                  }
                 }
               }
-            }
-          }}
-        >
-          <FontAwesome6 name="paper-plane" size={20} color="white" />
-        </TouchableOpacity>
-      </View>
+            }}
+          >
+            <FontAwesome6 name="paper-plane" size={20} color="white" />
+          </TouchableOpacity>
+        </View>
     </View>
   );
 };

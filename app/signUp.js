@@ -14,7 +14,6 @@ import { Image } from "expo-image";
 import { useCustomFonts } from "../useCustomFonts";
 import { FontAwesome6 } from "@expo/vector-icons";
 import { router } from "expo-router";
-import host from "../host";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -59,7 +58,7 @@ export default function signUp() {
     }
 
     let response = await fetch(
-      host+"/MyChatBackend/SignUp",
+      process.env.EXPO_PUBLIC_HOST_URL+"/MyChatBackend/SignUp",
       {
         method: "POST",
         body: form,
@@ -137,6 +136,10 @@ export default function signUp() {
           <FontAwesome6 name={isVisible? "eye": "eye-slash"} size={16} color={"white"} />
         </TouchableOpacity>
       </View>
+
+      <TouchableOpacity style={styles.button} onPress={handleCreateAccount}>
+        <Text style={styles.buttonText}>Register</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity style={styles.button2} onPress={()=> {
         router.replace("/")

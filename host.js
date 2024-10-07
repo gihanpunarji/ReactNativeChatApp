@@ -1,1 +1,0 @@
-export default host = "https://4b34-112-134-196-27.ngrok-free.app";
